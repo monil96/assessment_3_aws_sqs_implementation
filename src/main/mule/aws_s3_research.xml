@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:sqs="http://www.mulesoft.org/schema/mule/sqs"
+	xmlns:s3="http://www.mulesoft.org/schema/mule/s3" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/s3 http://www.mulesoft.org/schema/mule/s3/current/mule-s3.xsd
+http://www.mulesoft.org/schema/mule/sqs http://www.mulesoft.org/schema/mule/sqs/current/mule-sqs.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="0a9a8184-205a-4f7b-b876-993fa847436c" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<s3:config name="Amazon_S3_Configuration" doc:name="Amazon S3 Configuration" doc:id="6774c644-f5de-4243-b101-646a05422e13" >
+		<s3:basic-connection accessKey="AKIAJWKZDPLHRO4WPP7A" secretKey="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" />
+	</s3:config>
+	<sqs:config name="Amazon_SQS_Configuration" doc:name="Amazon SQS Configuration" doc:id="1bb4f09d-7f3a-4021-8fd6-efa884916fcb" >
+		<sqs:basic-connection testQueueArn="arn:aws:sqs:us-east-2:211556697089:mule-s3-polling-monilporwal" accessKey="AKIAJWKZDPLHRO4WPP7A" secretKey="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" region="US_EAST_2" />
+	</sqs:config>
+	<flow name="aws_s3_researchFlow" doc:id="b762e976-3557-4f66-ae47-1845b1aec917" >
+		<s3:get-object doc:name="Get object" doc:id="6f676bdb-6bf2-4003-b41a-0680554403de" config-ref="Amazon_S3_Configuration" bucketName="amazon-assessment-monil-sqs" key="sample_aws.txt"/>
+		<logger level="INFO" doc:name="Logger" doc:id="2d4c1497-2482-445a-848c-976b0ad81467" message="#[payload]"/>
+	</flow>
+	<flow name="aws_s3_researchFlow1" doc:id="4d1a23ed-7aa1-41d3-902e-9bed52e2f6bb" >
+		<http:listener doc:name="Listener" doc:id="a836246a-ee36-4825-97ef-604330dcac58" config-ref="HTTP_Listener_config" path="/awssqs"/>
+		<sqs:read doc:name="Read" doc:id="57b622e3-7289-42b4-ac66-dc06323ba7f9" config-ref="Amazon_SQS_Configuration" queueUrl="https://sqs.us-east-2.amazonaws.com/211556697089/mule-s3-polling-monilporwal" maxNumberOfMessages="10"/>
+		<ee:transform doc:name="Transform Message" doc:id="619136e3-4ec8-4935-9d30-40a185a1f409" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+if(isEmpty(payload))
+{
+	"Result":"No new object"
+}else
+{
+	mule:lookup("aws_s3_researchFlow", payload)
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="6d1d4f3f-8e32-4c67-8a05-d1b92a33de12" message='#[payload]'/>
+	</flow>
+</mule>

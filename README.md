@@ -13,6 +13,6 @@ To test the flow delete the File Name: "aws_sample.txt" file from Bucket Name: "
 and the flow will get triggered automatically and read the file data and print it to console as well as Rest Client
 
 3. Bucket : "amazon-assessment-monil-sqs"
-File name : "aws_sample.txt"
+File name : "sample_aws.txt"
 
 
